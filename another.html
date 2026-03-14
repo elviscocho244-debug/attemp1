@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ReuseKit — Multi Herramienta de Código</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --card: #1a1a28;
+      --accent: #00ffa3;
+      --accent2: #7c3aed;
+      --accent3: #f59e0b;
+      --text: #e8e8f0;
+      --muted: #6b7080;
+      --border: #2a2a3a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── GLOW BLOBS ── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.12;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 { width: 500px; height: 500px; background: var(--accent2); top: -150px; left: -100px; }
+    .blob-2 { width: 400px; height: 400px; background: var(--accent); bottom: 100px; right: -100px; }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 6%;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.3rem;
+      color: var(--accent);
+      letter-spacing: -1px;
+    }
+    .logo span { color: var(--text); }
+
+    .badge-escolar {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      background: var(--accent2);
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 6% 4rem;
+    }
+
+    .hero-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      border: 1px solid var(--accent);
+      padding: 6px 18px;
+      border-radius: 4px;
+      margin-bottom: 2rem;
+      display: inline-block;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    h1 {
+      font-size: clamp(3rem, 8vw, 7rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -3px;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.7s 0.1s ease both;
+    }
+
+    h1 .highlight {
+      color: var(--accent);
+      position: relative;
+    }
+
+    h1 .highlight::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--accent);
+      border-radius: 2px;
+      opacity: 0.5;
+    }
+
+    .hero-sub {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.7s 0.2s ease both;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp 0.7s 0.3s ease both;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 14px 32px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 30px rgba(0,255,163,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 0 50px rgba(0,255,163,0.5); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      padding: 14px 32px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── STATS ── */
+    .stats {
+      position: relative; z-index: 1;
+      display: flex;
+      justify-content: center;
+      gap: 2px;
+      padding: 0 6% 5rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 1.5rem 2.5rem;
+      text-align: center;
+      flex: 1;
+      min-width: 160px;
+      max-width: 240px;
+      animation: fadeUp 0.7s 0.4s ease both;
+    }
+    .stat-item:first-child { border-radius: 12px 0 0 12px; }
+    .stat-item:last-child  { border-radius: 0 12px 12px 0; }
+
+    .stat-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 2.2rem;
+      color: var(--accent);
+      font-weight: 700;
+      display: block;
+    }
+    .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── FEATURES ── */
+    section { position: relative; z-index: 1; padding: 5rem 6%; }
+
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .section-desc {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 500px;
+      line-height: 1.7;
+      margin-bottom: 3rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5px;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .feature-card:hover { border-color: var(--accent); }
+    .feature-card:hover .fc-icon { transform: scale(1.15) rotate(-5deg); }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover::before { opacity: 1; }
+
+    .fc-icon {
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+      display: block;
+      transition: transform 0.3s;
+    }
+    .fc-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      letter-spacing: -0.5px;
+    }
+    .fc-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.65; }
+
+    /* ── CODE DEMO ── */
+    .demo-section {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .demo-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+    @media(max-width: 768px) { .demo-inner { grid-template-columns: 1fr; } }
+
+    .code-window {
+      background: #0d0d14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .code-topbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: #1a1a24;
+      border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f56; }
+    .dot-y { background: #ffbd2e; }
+    .dot-g { background: #27c93f; }
+    .code-filename { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-left: 8px; }
+
+    pre {
+      padding: 1.5rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.8;
+      overflow-x: auto;
+    }
+
+    .c-kw  { color: #c792ea; }
+    .c-fn  { color: #82aaff; }
+    .c-str { color: #c3e88d; }
+    .c-cm  { color: #546e7a; }
+    .c-num { color: var(--accent3); }
+    .c-tag { color: var(--accent); }
+
+    /* ── HOW IT WORKS ── */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .step {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      padding: 2rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      transition: border-color 0.3s;
+    }
+    .step:first-child { border-radius: 12px 12px 0 0; }
+    .step:last-child  { border-radius: 0 0 12px 12px; }
+    .step:hover { border-color: var(--accent2); }
+
+    .step-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent2);
+      min-width: 2rem;
+      line-height: 1;
+    }
+    .step-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .step-desc  { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 3rem 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+    .footer-copy {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">Reuse<span>Kit</span></div>
+    <span class="badge-escolar">✦ Proyecto Escolar · BY Andy Arh</span>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <span class="hero-tag">⚙ Multi Herramienta de Programación</span>
+    <h1>Escribe menos.<br><span class="highlight">Reutiliza</span> más.</h1>
+    <p class="hero-sub">
+      ReuseKit es una multi herramienta diseñada para fomentar la <strong>reutilización de código</strong>: guarda, organiza y comparte fragmentos de código de forma rápida y eficiente.
+    </p>
+    <div class="hero-buttons">
+      <a href="#funciones" class="btn-primary">Ver funciones</a>
+      <a href="#como-funciona" class="btn-outline">¿Cómo funciona?</a>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-item">
+      <span class="stat-num">3×</span>
+      <span class="stat-label">Más rápido escribir</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">70%</span>
+      <span class="stat-label">Menos código repetido</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">∞</span>
+      <span class="stat-label">Snippets guardados</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">100%</span>
+      <span class="stat-label">Código tuyo</span>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section id="funciones">
+    <div class="section-label">// Funcionalidades</div>
+    <h2 class="section-title">Todo lo que<br>necesita un dev.</h2>
+    <p class="section-desc">Un conjunto de herramientas pensadas para ahorrar tiempo y promover buenas prácticas de desarrollo.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="fc-icon">📦</span>
+        <div class="fc-title">Biblioteca de Snippets</div>
+        <p class="fc-desc">Guarda tus fragmentos de código favoritos organizados por lenguaje, categoría o proyecto. Accede a ellos en segundos.</p>
+      </div>
+      <div class="feature-card">
+        <span class="fc-icon">🔍</span>
+        <div class="fc-title">Búsqueda Inteligente</div>
+        <p class="fc-desc">Encuentra cualquier función o módulo guardado con solo escribir unas palabras. Sin perder tiempo buscando en archivos viejos.</p>
+      </div>
+      <div class="feature-card">
+        <span class="fc-icon">🔗</span>
+        <div class="fc-title">Módulos Reutilizables</div>
+        <p class="fc-desc">Convierte bloques de código en módulos independientes que puedas importar en cualquier proyecto con un solo clic.</p>
+      </div>
+      <div class="feature-card">
+        <span class="fc-icon">🤝</span>
+        <div class="fc-title">Compartir con el Equipo</div>
+        <p class="fc-desc">Comparte snippets con compañeros de clase o de trabajo. El conocimiento colectivo crece cuando se comparte.</p>
+      </div>
+      <div class="feature-card">
+        <span class="fc-icon">🏷️</span>
+        <div class="fc-title">Etiquetas y Versiones</div>
+        <p class="fc-desc">Organiza tu código con etiquetas y lleva control de versiones para saber qué cambió y cuándo.</p>
+      </div>
+      <div class="feature-card">
+        <span class="fc-icon">🌐</span>
+        <div class="fc-title">Multi-lenguaje</div>
+        <p class="fc-desc">Compatible con Python, JavaScript, Java, C++, HTML, CSS y más. Un solo lugar para todos tus proyectos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO CODE -->
+  <section class="demo-section">
+    <div class="demo-inner">
+      <div>
+        <div class="section-label">// Ejemplo real</div>
+        <h2 class="section-title">Código que<br>se reutiliza.</h2>
+        <p class="section-desc">Define una función una vez y úsala en todos tus proyectos. ReuseKit la almacena lista para importar.</p>
+        <a href="#" class="btn-primary">Probar ahora →</a>
+      </div>
+      <div class="code-window">
+        <div class="code-topbar">
+          <span class="dot dot-r"></span>
+          <span class="dot dot-y"></span>
+          <span class="dot dot-g"></span>
+          <span class="code-filename">utils/helpers.py</span>
+        </div>
+        <pre><span class="c-cm"># ✦ Guardado en ReuseKit</span>
+<span class="c-kw">from</span> reusekit <span class="c-kw">import</span> snippet
+
+<span class="c-cm"># Función reutilizable</span>
+<span class="c-tag">@snippet</span>(tag=<span class="c-str">"math"</span>)
+<span class="c-kw">def</span> <span class="c-fn">calcular_promedio</span>(lista):
+    <span class="c-kw">if not</span> lista:
+        <span class="c-kw">return</span> <span class="c-num">0</span>
+    <span class="c-kw">return</span> <span class="c-fn">sum</span>(lista) / <span class="c-fn">len</span>(lista)
+
+<span class="c-cm"># Importar en otro proyecto</span>
+<span class="c-kw">from</span> reusekit.lib <span class="c-kw">import</span> calcular_promedio
+
+resultado = <span class="c-fn">calcular_promedio</span>([<span class="c-num">8</span>, <span class="c-num">9</span>, <span class="c-num">10</span>, <span class="c-num">7</span>])
+<span class="c-fn">print</span>(<span class="c-str">f"Promedio: </span>{resultado}<span class="c-str">"</span>)  <span class="c-cm"># → 8.5</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="como-funciona">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items:start;">
+      <div>
+        <div class="section-label">// Cómo funciona</div>
+        <h2 class="section-title">Simple.<br>Rápido.<br>Eficiente.</h2>
+        <p class="section-desc">En solo tres pasos comienza a ahorrar horas de trabajo y a escribir código limpio de verdad.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div>
+            <div class="step-title">Guarda tu fragmento</div>
+            <p class="step-desc">Pega o escribe tu código en ReuseKit, ponle un nombre y etiquétalo. Se guarda automáticamente.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div>
+            <div class="step-title">Organiza y documenta</div>
+            <p class="step-desc">Agrega una descripción, lenguaje y categoría. Documenta cómo se usa para que siempre tengas contexto.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div>
+            <div class="step-title">Importa donde lo necesites</div>
+            <p class="step-desc">Busca el snippet y cópialo o impórtalo directamente en tu proyecto. ¡Listo, sin reescribir nada!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">ReuseKit</div>
+    <div class="footer-copy">Proyecto escolar · Desarrollado por Andy Arh · 2026</div>
+  </footer>
+
+</body>
+</html>
